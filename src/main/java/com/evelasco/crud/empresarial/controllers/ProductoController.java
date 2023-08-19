@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -85,11 +86,19 @@ public class ProductoController {
 	}
 	@CrossOrigin(origins ="http://localhost:4200" )
 	@PutMapping("/producto/{id}")
-	public ResponseEntity<?> actualizarProducto(@PathVariable Long id,@RequestBody Producto producto){
-		System.out.println("//////unidad "+producto.getUnidad());
-		Producto productoActualizado=service.findById(id);
+	public ResponseEntity<?> actualizarProducto(@Valid @RequestBody Producto producto,BindingResult result,@PathVariable Long id){
 		
 		Map<String,Object>response=new HashMap<>();
+		Producto productoActualizado=service.findById(id);
+		
+		if(result.hasErrors()) {
+			List<String>errors=result.getFieldErrors().stream()
+					.map(e->"El campo '"+e.getField()+"' "+e.getDefaultMessage())
+					.collect(Collectors.toList());
+			response.put("errors", errors);
+			return new ResponseEntity<Map<String,Object>>(response,HttpStatus.BAD_REQUEST);
+		}
+		
 		try {
 			productoActualizado.setNombre(producto.getNombre());
 			productoActualizado.setPrecio(producto.getPrecio());
